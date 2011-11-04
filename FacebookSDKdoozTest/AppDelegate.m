@@ -7,14 +7,30 @@
 //
 
 #import "AppDelegate.h"
+#import "FBConnect.h"
 
 @implementation AppDelegate
 
 @synthesize window = _window;
+@synthesize facebook =_facebook;
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     // Override point for customization after application launch.
+    self.facebook = [[Facebook alloc] initWithAppId:@"272474129433721" andDelegate:self];
+    //Check for previously saved information
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if ([defaults objectForKey:@"FBAccessTokenKey"] &&[defaults objectForKey:@"FBExpirationDateKey"]) {
+        self.facebook.accessToken = [defaults objectForKey:@"FBAccessTokenKey"];
+        facebook.expirationDate = [defaults objectForKey:@"FBExpirationDateKey"];
+    }
+    
+    //Check for a valid session and if it is not valid call the authorize method which will both log the user in and prompt the user to authorize the app
+    
+    if (![facebook isSessionValid]) {
+        [facebook authorize:nil];
+    }
+                                                       
     return YES;
 }
 							
@@ -55,6 +71,27 @@
      Save data if appropriate.
      See also applicationDidEnterBackground:.
      */
+}
+
+#pragma mark -
+#pragma mark Facebook delegate methods
+
+//Facebook PRE 4.2 support
+
+-(BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url{
+    return [facebook handleOpenURL:url];
+}
+
+-(BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation{
+    return [facebook handleOpenURL:url];
+}
+
+//FBSessionDelegate implementation: Save user's credentials (accces token and corresponding expiration date)
+-(void)fbDidLogin{
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setObject:[facebook accessToken] forKey:@"FBAccesTokenKey"];
+    [defaults setObject:[facebook expirationDate] forKey:@"FBExpirationDateKey"];
+    [defaults synchronize];
 }
 
 @end
